@@ -14,7 +14,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen p-2">
       {/* Header */}
       <header className="  px-4 py-6">
         <nav className="flex items-center justify-between">
@@ -24,7 +24,7 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button asChild variant="ghost">
+            <Button asChild variant="ghost" className="hidden sm:flex">
               <Link href="/auth/login">Sign in</Link>
             </Button>
             <Button asChild>
@@ -165,11 +165,19 @@ export default function HomePage() {
             Join thousands of women taking control of their mental wellness
             journey
           </p>
-          <div className="flex flex-wrap sm:flex-nowrap gap-4 mx-auto max-w-md">
-            <Button asChild size="lg" className="h-12 px-8 text-base">
+          <div className="flex flex-wrap sm:flex-nowrap gap-4 mx-auto max-w-md justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="h-12 px-8 text-base max-w-60 w-full"
+            >
               <Link href="/auth/sign-up">Create Free Account</Link>
             </Button>
-            <Button asChild size="lg" className="h-12 px-8 text-base">
+            <Button
+              asChild
+              size="lg"
+              className="h-12 px-8 text-base max-w-60 w-full"
+            >
               <Link href="/auth/professional-register">
                 Register as Professional
               </Link>
