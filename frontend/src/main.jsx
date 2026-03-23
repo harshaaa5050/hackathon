@@ -6,10 +6,12 @@ import { ThemeProvider } from "./components/theme-provider";
 import { BrowserRouter, Routes, Route } from "react-router";
 import LoginPage from "./pages/Login";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Toaster } from "sonner";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Toaster richColors position="top-right" />
       <BrowserRouter>
         <Routes>
           <Route index element={<App />} />
