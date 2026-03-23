@@ -1,5 +1,5 @@
 import HeroPage from "@/pages/Hero";
-import LoginPage from "./pages/Login";
+import LoginPage from "./pages/Register";
 
 function App() {
   return (
