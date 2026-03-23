@@ -1,78 +1,145 @@
-import { useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { useNavigate, Link } from 'react-router-dom'
-import { Heart, Eye, EyeOff } from 'lucide-react'
+import { useState } from "react";
+import { toast } from "sonner";
+import { loginUser } from "@/services/auth";
+import { loginSchema } from "@/lib/validations";
 
-export default function Login() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export default function LoginPage() {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+
+    setForm((prev) => ({ ...prev, [id]: value }));
+    setErrors((prev) => ({ ...prev, [id]: "" }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const user = await login(email, password)
-      if (!user.onboardingComplete) navigate('/onboarding')
-      else navigate('/dashboard')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed')
-    } finally {
-      setLoading(false)
+    e.preventDefault();
+
+    if (loading) return;
+
+    // ✅ Zod validation
+    const result = loginSchema.safeParse(form);
+
+    if (!result.success) {
+      const fieldErrors = {};
+
+      result.error.issues.forEach((err) => {
+        fieldErrors[err.path[0]] = err.message;
+      });
+
+      setErrors(fieldErrors);
+      return;
     }
-  }
+
+    setLoading(true);
+
+    try {
+      const data = await loginUser(form);
+
+      // ✅ If using JWT
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      toast.success("Login successful 🎉");
+
+      setForm({ email: "", password: "" });
+
+      // 👉 redirect (if using react-router)
+      // navigate("/dashboard");
+    } catch (err) {
+      const message =
+        typeof err === "string" ? err : err?.message || "Login failed";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-background to-purple-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Heart className="h-8 w-8 text-pink-500 fill-pink-500" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">MatriAI</h1>
-          </div>
-          <p className="text-muted-foreground text-sm">Your compassionate mental health companion</p>
-        </div>
+    <div className="flex w-full justify-center items-center min-h-dvh">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Login to your account</CardTitle>
+          <CardDescription className="text-muted-foreground/60">
+            Enter your details below
+          </CardDescription>
+        </CardHeader>
 
-        <div className="bg-card rounded-2xl border border-border shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-6 text-center">Welcome Back</h2>
+        <form onSubmit={handleSubmit}>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              {/* EMAIL */}
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  disabled={loading}
+                  value={form.email}
+                  onChange={handleChange}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email}</p>
+                )}
+              </div>
 
-          {error && <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50" placeholder="you@example.com" />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Password</label>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
-                  className="w-full h-10 px-3 pr-10 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-2.5 text-muted-foreground">
-                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              {/* PASSWORD */}
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  disabled={loading}
+                  value={form.password}
+                  onChange={handleChange}
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-500">{errors.password}</p>
+                )}
               </div>
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full h-10 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
+          </CardContent>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account? <Link to="/register" className="text-pink-500 hover:underline font-medium">Sign Up</Link>
-          </div>
-          <div className="mt-2 text-center text-sm text-muted-foreground">
-            Are you a doctor? <Link to="/doctor/register" className="text-purple-500 hover:underline font-medium">Register here</Link>
-          </div>
-        </div>
-      </div>
+          <CardFooter className="flex-col gap-2 mt-6">
+            <Button disabled={loading} type="submit" className="w-full">
+              {loading ? "Signing in..." : "Login"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => toast.info("Google login not implemented yet")}
+            >
+              Continue with Google
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
-  )
+  );
 }

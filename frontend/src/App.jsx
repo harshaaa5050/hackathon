@@ -1,32 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from '@/context/AuthContext'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import Navbar from '@/components/Navbar'
-import Login from '@/pages/Login'
-import Register from '@/pages/Register'
-import DoctorRegister from '@/pages/DoctorRegister'
-import DoctorLogin from '@/pages/DoctorLogin'
-import Onboarding from '@/pages/Onboarding'
-import Dashboard from '@/pages/Dashboard'
-import DailyCheckIn from '@/pages/DailyCheckIn'
-import Chat from '@/pages/Chat'
-import Community from '@/pages/Community'
-import CommunityThread from '@/pages/CommunityThread'
-import Analytics from '@/pages/Analytics'
-import Education from '@/pages/Education'
-import DoctorDashboard from '@/pages/DoctorDashboard'
-import AdminPanel from '@/pages/AdminPanel'
-
-function AppRoutes() {
-  const { user, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-muted-foreground text-lg">Loading...</div>
-      </div>
-    )
-  }
+import HeroPage from "@/pages/Hero";
+import LoginPage from "./pages/Register";
 
   return (
     <>
