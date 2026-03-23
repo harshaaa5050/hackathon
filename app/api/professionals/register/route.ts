@@ -80,6 +80,7 @@ export async function POST(request: Request) {
         registration_type,
         bio: bio || null,
         status: "pending",
+        is_verified: false,
       })
       .select()
       .single();
