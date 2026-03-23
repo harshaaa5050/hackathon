@@ -8,6 +8,7 @@ import {
   RemoteTrackPublication,
   RemoteTrack,
   LocalParticipant,
+  LocalVideoTrack,
   Track,
   createLocalVideoTrack,
   createLocalAudioTrack,
@@ -55,6 +56,8 @@ export function ConsultationRoom({
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  // Store the local video track so we can attach it once the video element is mounted
+  const localVideoTrackRef = useRef<LocalVideoTrack | null>(null);
 
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("idle");
@@ -166,7 +169,8 @@ export function ConsultationRoom({
       await room.localParticipant.publishTrack(videoTrack);
       await room.localParticipant.publishTrack(audioTrack);
 
-      if (localVideoRef.current) videoTrack.attach(localVideoRef.current);
+      // Store track in ref — we attach to the <video> element in useEffect after render
+      localVideoTrackRef.current = videoTrack;
 
       setConnectionState("connected");
 
@@ -214,6 +218,16 @@ export function ConsultationRoom({
     }).catch(() => {});
     router.push("/doctors");
   }, [roomName, router, stopTimer]);
+
+  // Attach local video track once the video element is mounted (connectionState changes to 'connected')
+  useEffect(() => {
+    if (connectionState !== "connected") return;
+    const track = localVideoTrackRef.current;
+    const el = localVideoRef.current;
+    if (track && el) {
+      track.attach(el);
+    }
+  }, [connectionState]);
 
   // Cleanup on unmount
   useEffect(() => {

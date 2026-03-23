@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   // Verify the professional is verified
   const { data: pro, error: proError } = await supabase
     .from("professional_profiles")
-    .select("id, full_name, is_verified")
+    .select("id, full_name, is_verified, user_id")
     .eq("id", professionalId)
     .eq("is_verified", true)
     .single();
@@ -36,22 +36,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert the consultation record
-  const { error: consultError } = await supabase.from("consultations").upsert(
-    {
-      room_name: roomName,
-      user_id: user.id,
-      professional_id: professionalId,
-      status: "waiting",
-    },
-    { onConflict: "room_name" },
-  );
+  // If the calling user IS the doctor, skip upsert (they are joining, not creating)
+  const isDoctorJoining = pro.user_id === user.id;
 
-  if (consultError) {
-    return NextResponse.json(
-      { error: "Failed to create consultation" },
-      { status: 500 },
+  if (!isDoctorJoining) {
+    // Patient: upsert the consultation record
+    const { error: consultError } = await supabase.from("consultations").upsert(
+      {
+        room_name: roomName,
+        user_id: user.id,
+        professional_id: professionalId,
+        status: "waiting",
+      },
+      { onConflict: "room_name" },
     );
+    if (consultError) {
+      return NextResponse.json(
+        { error: "Failed to create consultation" },
+        { status: 500 },
+      );
+    }
   }
 
   const apiKey = process.env.LIVEKIT_API_KEY!;
