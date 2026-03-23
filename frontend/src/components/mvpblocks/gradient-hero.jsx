@@ -1,9 +1,12 @@
 "use client";
+
 import React from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronRight, Github } from "lucide-react";
+import { ArrowRight, ChevronRight, ExternalLink, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
-export default function HeroComponent() {
+
+export default function GradientHero() {
   return (
     <div className="bg-background relative w-full overflow-hidden">
       {/* Background gradient */}
