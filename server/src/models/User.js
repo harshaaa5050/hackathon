@@ -1,5 +1,3 @@
-// email, password
-
 import mongoose from 'mongoose'
 
 const userSchema = new mongoose.Schema({
@@ -14,7 +12,19 @@ const userSchema = new mongoose.Schema({
 	},
 	password: { type: String, required: true },
 	googleId: { type: String },
-})
+	role: { type: String, enum: ['user', 'admin'], default: 'user' },
+	onboardingComplete: { type: Boolean, default: false },
+	age: { type: Number },
+	lifeStage: { type: String, enum: ['pregnancy', 'postpartum', 'miscarriage', 'menopause'] },
+	culturalContext: {
+		livingArrangement: { type: String },
+		supportSystem: { type: String },
+		workStatus: { type: String },
+		householdPressure: { type: String },
+		partnerInvolvement: { type: String },
+	},
+	lifeStageAnswers: { type: mongoose.Schema.Types.Mixed, default: {} },
+}, { timestamps: true })
 
 const User = mongoose.model('User', userSchema)
 

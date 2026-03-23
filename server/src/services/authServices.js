@@ -21,7 +21,16 @@ export const registerUser = async (req, res) => {
 			secure: true,
 			sameSite: 'Strict',
 		})
-        res.status(201).json({ message: 'User registered successfully', user: savedUser })
+        res.status(201).json({
+            message: 'User registered successfully',
+            user: {
+                _id: savedUser._id,
+                name: savedUser.name,
+                email: savedUser.email,
+                role: savedUser.role,
+                onboardingComplete: savedUser.onboardingComplete,
+            },
+        })
     } catch (error) {
         res.status(500).json({ message: 'Error registering user', error: error.message })
     }
@@ -47,8 +56,33 @@ export const loginUser = async (req, res) => {
             secure: true,
             sameSite: 'Strict',
         })
-        res.status(200).json({ message: 'Login successful', user })
+        res.status(200).json({
+            message: 'Login successful',
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                onboardingComplete: user.onboardingComplete,
+                lifeStage: user.lifeStage,
+            },
+        })
     } catch (error) {
         res.status(500).json({ message: 'Error logging in', error: error.message })
     }
+}
+
+export const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password')
+        if (!user) return res.status(404).json({ message: 'User not found' })
+        res.status(200).json(user)
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user', error: error.message })
+    }
+}
+
+export const logoutUser = async (req, res) => {
+    res.clearCookie('token')
+    res.status(200).json({ message: 'Logged out successfully' })
 }
