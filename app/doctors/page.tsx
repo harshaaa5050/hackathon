@@ -11,44 +11,22 @@ export default async function DoctorsPage() {
 
   if (!user) redirect("/auth/login");
 
-  // Fetch seeded doctors from the legacy table
-  const { data: legacyDoctors } = await supabase
-    .from("doctors")
-    .select("*")
-    .order("rating", { ascending: false });
-
-  // Fetch verified professionals from the professional_profiles table
-  const { data: verifiedProfessionals } = await supabase
+  // Source of truth: professional_profiles only — no legacy doctors table
+  const { data: professionals, error } = await supabase
     .from("professional_profiles")
-    .select("*")
-    .eq("status", "verified")
+    .select(
+      "id, full_name, email, role, specialization, years_experience, license_number, registration_type, bio, status, is_verified, created_at",
+    )
+    .order("is_verified", { ascending: false }) // verified first
     .order("created_at", { ascending: false });
-
-  // Normalise professional_profiles rows into the Doctor shape
-  const professionalDoctors = (verifiedProfessionals || []).map((p) => ({
-    id: p.id,
-    name: p.full_name,
-    specialty: p.specialization,
-    location: "India", // professional_profiles has no location field yet
-    phone: null,
-    email: p.email,
-    bio: p.bio,
-    image_url: null,
-    rating: 0,
-    registration_type: p.registration_type as "NMC" | "RCI",
-    years_experience: p.years_experience,
-  }));
-
-  const legacyNormalised = (legacyDoctors || []).map((d) => ({
-    ...d,
-    registration_type: null as null,
-    years_experience: null as null,
-  }));
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <DoctorsContent doctors={[...professionalDoctors, ...legacyNormalised]} />
+      <DoctorsContent
+        professionals={professionals ?? []}
+        currentUserId={user.id}
+      />
     </div>
   );
 }
