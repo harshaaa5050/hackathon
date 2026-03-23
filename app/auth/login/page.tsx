@@ -1,16 +1,5 @@
 "use client";
 
-import { createClient } from '@/lib/supabase/client'
-import { syncUserFromDB } from '@/lib/matriai-storage'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { Heart } from 'lucide-react'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,11 +34,6 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
-      if (error) throw error
-      // Hydrate localStorage from DB before navigating
-      await syncUserFromDB()
-      router.push('/dashboard')
       });
       if (error) throw error;
 
