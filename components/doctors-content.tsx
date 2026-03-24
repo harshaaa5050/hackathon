@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,7 +25,7 @@ import {
   Lock,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Professional {
   id: string;
@@ -82,8 +82,24 @@ export function DoctorsContent({
   isPremium,
 }: DoctorsContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("All");
+
+  // Initialize filter from URL param (e.g. /doctors?filter=Psychiatrist)
+  const filterParam = searchParams.get("filter");
+  const initialFilter =
+    filterParam && ROLE_FILTERS.includes(filterParam) ? filterParam : "All";
+  const [roleFilter, setRoleFilter] = useState(initialFilter);
+
+  // Sync filter when URL param changes (e.g. user navigates from chat triage)
+  useEffect(() => {
+    if (filterParam && ROLE_FILTERS.includes(filterParam)) {
+      setRoleFilter(filterParam);
+    }
+  }, [filterParam]);
+
+  // Always hide unverified — users must never see pending or rejected professionals
+  const verified = professionals.filter((p) => p.is_verified);
   const [showAll, setShowAll] = useState(false);
   const [startingCall, setStartingCall] = useState<string | null>(null);
 

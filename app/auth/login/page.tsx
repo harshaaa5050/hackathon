@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { syncUserFromDB } from "@/lib/matriai-storage";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,6 +37,9 @@ export default function LoginPage() {
         password,
       });
       if (error) throw error;
+
+      // Sync user data from database to localStorage
+      await syncUserFromDB();
 
       // Check if this user is a professional — redirect to pro dashboard if so
       const { data: pro } = await supabase
