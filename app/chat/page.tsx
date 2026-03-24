@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,27 +50,8 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSummarized = useRef(false);
 
-  // useChat for NORMAL streaming responses
-  const { messages: streamMessages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  });
-
-  const isStreaming = status === "streaming" || status === "submitted";
-  const isLoading = isStreaming || isManualLoading;
-
-  // Combine stream messages and manual messages for unified display
-  const allMessages: ChatMessage[] = [
-    ...manualMessages,
-    ...streamMessages.map((m) => ({
-      id: m.id,
-      role: m.role as "user" | "assistant",
-      content:
-        m.parts
-          ?.filter((p) => p.type === "text")
-          .map((p) => (p as { type: "text"; text: string }).text)
-          .join("") ?? "",
-    })),
-  ];
+  const isLoading = isManualLoading;
+  const allMessages = manualMessages;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -173,7 +152,29 @@ export default function ChatPage() {
 
         const decoder = new TextDecoder();
         let fullText = "";
+        let buffer = "";
         const assistantId = `assistant-${Date.now()}`;
+
+        const appendDeltaFromLine = (line: string) => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+
+          // AI SDK streams can be prefixed as "data: 0:\"...\"".
+          const payload = trimmed.startsWith("data:")
+            ? trimmed.slice(5).trimStart()
+            : trimmed;
+
+          if (!payload.startsWith("0:")) return;
+
+          try {
+            const textContent = JSON.parse(payload.slice(2));
+            if (typeof textContent === "string") {
+              fullText += textContent;
+            }
+          } catch {
+            // Ignore malformed/partial lines.
+          }
+        };
 
         // Add placeholder message
         setManualMessages((prev) => [
@@ -185,24 +186,10 @@ export default function ChatPage() {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-
-          // Parse SSE data lines — extract text from the AI SDK protocol
-          const lines = chunk.split("\n");
-          for (const line of lines) {
-            // AI SDK SSE format: lines starting with specific type codes
-            // "0:" prefix = text delta
-            if (line.startsWith("0:")) {
-              try {
-                const textContent = JSON.parse(line.slice(2));
-                if (typeof textContent === "string") {
-                  fullText += textContent;
-                }
-              } catch {
-                // Not valid JSON, skip
-              }
-            }
-          }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() ?? "";
+          for (const line of lines) appendDeltaFromLine(line);
 
           // Update the message in place
           setManualMessages((prev) =>
@@ -211,6 +198,14 @@ export default function ChatPage() {
             )
           );
         }
+
+        // Flush remaining buffered content after stream closes.
+        appendDeltaFromLine(buffer);
+        setManualMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: fullText } : m
+          )
+        );
       }
     } catch (e) {
       console.error("Chat error:", e);

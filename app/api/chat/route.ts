@@ -1,8 +1,6 @@
 import {
   generateText,
-  consumeStream,
   convertToModelMessages,
-  streamText,
   UIMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -263,18 +261,17 @@ export async function POST(req: Request) {
 
   // Step 3: Handle based on triage level
   if (triage.level === "normal") {
-    // ── NORMAL: Stream response as usual ──────────────────
+    // ── NORMAL: Return JSON response for reliable client rendering ──
     const systemPrompt = NORMAL_PROMPT + userContext;
-    const result = streamText({
+    const aiResult = await generateText({
       model: openrouter.chat("arcee-ai/trinity-large-preview:free"),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
-      abortSignal: req.signal,
     });
 
-    return result.toUIMessageStreamResponse({
-      originalMessages: messages,
-      consumeSseStream: consumeStream,
+    return NextResponse.json({
+      level: "normal",
+      content: aiResult.text,
     });
   }
 
